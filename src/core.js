@@ -8,8 +8,8 @@
     }
 
     const styles = `
-        #ra_workbench_window {
-            position: fixed; top: 100px; left: 100px; width: 700px; height: 500px;
+       #ra_workbench_window {
+            position: fixed; top: 100px; left: 100px; width: 900px; height: 550px;
             background: #f4e4bc; border: 2px solid #722205; z-index: 99999;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); font-family: Verdana, Arial, sans-serif;
             display: flex; flex-direction: column;
