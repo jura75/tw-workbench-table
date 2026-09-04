@@ -1,0 +1,9 @@
+{
+  "name": "tw-workbench",
+  "version": "1.0.0",
+  "description": "Modular Tribal Wars Workbench",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {}
+}
