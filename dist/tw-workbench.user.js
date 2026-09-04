@@ -313,13 +313,11 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
 
     UI.SuccessMessage('Получение списка игроков племени...');
 
-    // Загружаем страницу со списком игроков племени (режим members или members_units)
     $.get(server + "game.php?" + sitter + "screen=ally&mode=members_units", function(html) {
         let doc = new DOMParser().parseFromString(html, "text/html");
         let $select = $(doc).find("[name='player_id']");
         
         if (!$select.length) {
-            // Пробуем альтернативный режим ally обзора
             $.get(server + "game.php?" + sitter + "screen=ally&mode=members", function(html2) {
                 let doc2 = new DOMParser().parseFromString(html2, "text/html");
                 let $select2 = $(doc2).find("[name='player_id']");
@@ -328,6 +326,8 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
                     return;
                 }
                 processAllyPlayers($select2, server, sitter);
+            }).fail(function() {
+                UI.ErrorMessage('Не удалось запросить список членов племени.');
             });
             return;
         }
@@ -340,7 +340,9 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
 function processAllyPlayers($select, server, sitter) {
     let unitoption = {};
     $select.find("option:enabled").each(function() {
-        unitoption[$(this).text().trim()] = $(this).val();
+        let name = $(this).text().trim();
+        let val = $(this).val();
+        if (val) unitoption[name] = val;
     });
 
     let playerIds = Object.keys(unitoption);
@@ -379,8 +381,6 @@ function processAllyPlayers($select, server, sitter) {
                                 let coords = coordMatch ? coordMatch[0] : null;
                                 if (!coords) continue;
 
-                                // Индексы ячеек по вашему второму скрипту:
-                                // cells[2]=копья, [3]=мечи, [4]=топоры, [5]=луки, [6]=развед, [7]=лк, [8]=клик/тяж, [9]=тк, [10]=тараны, [11]=каты, [12]=пал, [13]=двор
                                 let spear = parseInt(cells[2].innerText.replace(/\./g, '')) || 0;
                                 let sword = parseInt(cells[3].innerText.replace(/\./g, '')) || 0;
                                 let axe = parseInt(cells[4].innerText.replace(/\./g, '')) || 0;
