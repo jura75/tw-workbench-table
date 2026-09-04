@@ -15,11 +15,11 @@ try {
 // @version      1.0.0
 // @description  Модульный воркбенч для TW
 // @author       Обезбашка
-// @match        https://.plemiona.pl/
-// @match        https://.voyna-plemen.ru/
-// @match        https://.tribalwars.net/
+// @match        https://*.plemiona.pl/*
+// @match        https://*.voyna-plemen.ru/*
+// @match        https://*.tribalwars.net/*
 // @grant        none
-// /UserScript
+// ==/UserScript==
 
 /* --- Core Module --- */
 ${coreContent}
@@ -28,13 +28,13 @@ ${coreContent}
 ${troopContent}
 `;
 
- if (!fs.existsSync(path.join(__dirname, 'dist'))) {
-       fs.mkdirSync(path.join(__dirname, 'dist'));
-   }
+    if (!fs.existsSync(path.join(__dirname, 'dist'))) {
+        fs.mkdirSync(path.join(__dirname, 'dist'));
+    }
 
-   fs.writeFileSync(outputFile, bundledCode, 'utf8');
-   console.log('Сборка успешно завершена!');   
+    fs.writeFileSync(outputFile, bundledCode, 'utf8');
+    console.log('Сборка успешно завершена!');
 
 } catch (err) {
-console.error('Ошибка при сборке:', err);
+    console.error('Ошибка при сборке:', err);
 }
