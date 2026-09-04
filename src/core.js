@@ -1,3 +1,4 @@
+// src/core.js
 (function() {
     'use strict';
 
@@ -50,6 +51,9 @@
 
     $('head').append(`<style>${styles}</style>`);
     $('body').append(template);
+
+    // Заполняем первую вкладку разметкой из tab_troops.js
+    $('#tab_troops').html(getTroopsTabHTML());
 
     $('#ra_close_btn').on('click', () => $('#ra_workbench_window').remove());
 
