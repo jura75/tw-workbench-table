@@ -105,7 +105,6 @@
 
 function getTroopsTabHTML() {
     return `
-        <!-- Панель управления -->
         <div class="ra-toolbar" style="margin-bottom: 8px; padding: 6px; background: #e8d0ab; border: 1px solid #7d510f; display: flex; justify-content: space-between; align-items: center; font-size: 11px; position: relative;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label><input type="checkbox" id="select_all_rows_chk" checked> Мир с луками</label>
@@ -113,7 +112,6 @@ function getTroopsTabHTML() {
             </div>
             <div style="display: flex; gap: 5px; align-items: center;">
                 <button class="btn" id="ra_fetch_page_troops_btn" style="cursor: pointer; padding: 2px 6px; font-weight: bold; background: #fff2cc;">Снять со страницы</button>
-                <button class="btn" id="ra_load_troops_btn" style="cursor: pointer; padding: 2px 6px; font-weight: bold;">Собрать данные</button>
                 <button class="btn" id="ra_tribe_troops_btn" style="cursor: pointer; padding: 2px 6px; font-weight: bold; background: #e2d0f9;">Войска племени</button>
                 <button class="btn" style="cursor: pointer; padding: 2px 6px; background: #f0e6cc;">Демо</button>
                 <button class="btn" style="cursor: pointer; padding: 2px 6px; background: #f2dede; color: #a94442;" id="ra_clear_troops_btn">Очистить</button>
@@ -129,7 +127,6 @@ function getTroopsTabHTML() {
             </div>
         </div>
 
-        <!-- Контейнер таблицы -->
         <div style="flex: 1; overflow: auto; border: 1px solid #7d510f;">
             <table class="vis" id="troops_table" width="100%" style="border-collapse: collapse; background: #f4e4bc; font-size: 11px; table-layout: fixed;">
                 <thead>
@@ -161,7 +158,6 @@ function getTroopsTabHTML() {
             </table>
         </div>
 
-        <!-- Меню фильтра -->
         <div id="ra_column_filter_menu" style="display: none; position: absolute; background: #fff5d9; border: 1px solid #7d510f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 2000; padding: 6px; font-size: 11px; width: 140px;">
             <div style="font-weight: bold; border-bottom: 1px solid #e0cea6; padding-bottom: 3px; margin-bottom: 4px;">Фильтр/Сортировка</div>
             <div class="ra-filter-action" data-action="asc" style="padding: 4px; cursor: pointer;">Сортировка: А ➔ Я</div>
@@ -215,7 +211,7 @@ $(document).on('click', '#ra_clear_troops_btn', function() {
 });
 
 // 1. Сбор со страницы аккаунта ("Снять со страницы")
-$(document).on('click', '#ra_fetch_page_troops_btn, #ra_load_troops_btn', function() {
+$(document).on('click', '#ra_fetch_page_troops_btn', function() {
     let url = window.game_data.link_base_pure + "overview_villages&mode=units";
     let playerName = window.game_data.player.name;
 
@@ -339,10 +335,10 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
 
 function processAllyPlayers($select, server, sitter) {
     let unitoption = {};
-    $select.find("option:enabled").each(function() {
+    $select.find("option").each(function() {
         let name = $(this).text().trim();
         let val = $(this).val();
-        if (val) unitoption[name] = val;
+        if (val && val !== "0") unitoption[name] = val;
     });
 
     let playerIds = Object.keys(unitoption);
