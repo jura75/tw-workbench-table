@@ -118,7 +118,7 @@ function getTroopsTabHTML() {
                 <button class="btn" style="cursor: pointer; padding: 2px 6px; background: #f0e6cc;">Демо</button>
                 <button class="btn" style="cursor: pointer; padding: 2px 6px; background: #f2dede; color: #a94442;" id="ra_clear_troops_btn">Очистить</button>
                 
-                <!-- [ПОДБЛОК: Обновленное выпадающее меню сохранения выбранного] -->
+                <!-- [ПОДБЛОК: Меню сохранения выбранного] -->
                 <div style="position: relative; display: inline-block;">
                     <button class="btn" id="ra_save_dropdown_btn" style="cursor: pointer; padding: 2px 8px; background: #dff0d8; font-weight: bold;">Сохранить выбранное ▼</button>
                     <div id="ra_save_menu" style="display: none; position: absolute; right: 0; top: 105%; background: #fff5d9; border: 1px solid #7d510f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 160px; font-size: 11px;">
@@ -164,11 +164,29 @@ function getTroopsTabHTML() {
             </table>
         </div>
 
-        <!-- [БЛОК: Всплывающее меню фильтра колонок в стиле Google Таблиц] -->
-        <div id="ra_column_filter_menu" style="display: none; position: absolute; background: #fff5d9; border: 1px solid #7d510f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 2000; padding: 8px; font-size: 11px; width: 210px;">
+        <!-- [БЛОК: Всплывающее меню фильтра колонок с поддержкой условий и списка чекбоксов] -->
+        <div id="ra_column_filter_menu" style="display: none; position: absolute; background: #fff5d9; border: 1px solid #7d510f; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 2000; padding: 8px; font-size: 11px; width: 220px;">
             <div class="ra-filter-action" data-action="asc" style="padding: 4px 6px; cursor: pointer; border-bottom: 1px solid #f0e6cc;">Сортировать А ➔ Я</div>
             <div class="ra-filter-action" data-action="desc" style="padding: 4px 6px; cursor: pointer; border-bottom: 1px solid #e0cea6;">Сортировать Я ➔ А</div>
             
+            <!-- [ПОДБЛОК: Фильтрация по условию (Больше, Меньше, Равно)] -->
+            <div style="padding: 6px 0; border-bottom: 1px solid #e0cea6;">
+                <div style="font-weight: bold; color: #5a2f0c; margin-bottom: 3px;">Фильтровать по условию:</div>
+                <div style="display: flex; gap: 4px; margin-bottom: 3px;">
+                    <select id="ra_filter_condition_op" style="font-size: 10px; padding: 2px; background: #fff; border: 1px solid #7d510f; width: 95px;">
+                        <option value="eq">Равно (=)</option>
+                        <option value="neq">Не равно (≠)</option>
+                        <option value="gt">Больше (&gt;)</option>
+                        <option value="gte">Больше или равно (≥)</option>
+                        <option value="lt">Меньше (&lt;)</option>
+                        <option value="lte">Меньше или равно (≤)</option>
+                        <option value="contains">Содержит</option>
+                    </select>
+                    <input type="text" id="ra_filter_condition_val" placeholder="Значение" style="font-size: 10px; padding: 2px; width: 100px; border: 1px solid #7d510f; background: #fff;">
+                </div>
+                <button class="btn" id="ra_filter_apply_condition" style="width: 100%; font-size: 10px; background: #f0e6cc; cursor: pointer; font-weight: bold;">Применить условие</button>
+            </div>
+
             <div style="padding: 6px 4px 2px 4px; font-weight: bold; color: #5a2f0c;">Фильтр по значениям:</div>
             <div style="display: flex; align-items: center; background: #fff; border: 1px solid #7d510f; padding: 2px 4px; margin-bottom: 4px;">
                 <input type="text" id="ra_filter_search_input" placeholder="Поиск..." style="border: none; outline: none; width: 100%; font-size: 11px; background: transparent;">
@@ -180,8 +198,8 @@ function getTroopsTabHTML() {
                 <a href="#" id="ra_filter_clear_all" style="color: #0000ee; text-decoration: underline;">Сбросить</a>
             </div>
             
-            <div id="ra_filter_checkboxes_container" style="max-height: 130px; overflow-y: auto; background: #fff; border: 1px solid #c1a264; padding: 4px; margin-bottom: 6px;">
-                <!-- Динамические чекбоксы уникальных значений -->
+            <div id="ra_filter_checkboxes_container" style="max-height: 120px; overflow-y: auto; background: #fff; border: 1px solid #c1a264; padding: 4px; margin-bottom: 6px;">
+                <!-- Динамические чекбоксы уникальных значений столбиком -->
             </div>
             
             <div style="display: flex; justify-content: flex-end; gap: 4px;">
@@ -196,7 +214,6 @@ function getTroopsTabHTML() {
 // БЛОК 2: ОБРАБОТЧИКИ ИНТЕРФЕЙСА И РАСШИРЕННЫЕ ФИЛЬТРЫ КОЛОНОК
 // ============================================================================
 
-// Открытие меню сохранения выбранного
 $(document).on('click', '#ra_save_dropdown_btn', function(e) {
     e.stopPropagation();
     $('#ra_save_menu').toggle();
@@ -217,12 +234,14 @@ $(document).on('click', '.ra-th-filter', function(e) {
     
     $('#ra_save_menu').hide();
     
-    // Собираем уникальные значения из этой колонки таблицы
+    // Собираем уникальные значения из этой колонки таблицы столбчиком
     let uniqueValues = {};
     $('#troops_table_body tr').each(function() {
         let $td = $(this).find('td').eq(activeFilterColumnIndex);
         if ($td.length) {
-            let val = $td.text().trim();
+            // Если это колонка типа войск с выпадающим списком <select>
+            let $sel = $td.find('select');
+            let val = $sel.length ? $sel.val() : $td.text().trim();
             if (val !== '') uniqueValues[val] = true;
         }
     });
@@ -239,18 +258,20 @@ $(document).on('click', '.ra-th-filter', function(e) {
     } else {
         sortedVals.forEach(function(val) {
             $container.append(`
-                <label style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; padding: 1px 0;">
-                    <input type="checkbox" class="ra-col-val-chk" value="${escapeHtml(val)}" checked> ${escapeHtml(val)}
+                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 2px 0; border-bottom: 1px dotted #f0e6cc; white-space: nowrap;">
+                    <input type="checkbox" class="ra-col-val-chk" value="${escapeHtml(val)}" checked> 
+                    <span style="overflow: hidden; text-overflow: ellipsis;">${escapeHtml(val)}</span>
                 </label>
             `);
         });
     }
     
     $('#ra_filter_search_input').val('');
+    $('#ra_filter_condition_val').val('');
 
     $('#ra_column_filter_menu').css({
         top: (offset.top - parentOffset.top + $(this).outerHeight()) + 'px',
-        left: Math.min(offset.left - parentOffset.left, $('#ra_workbench_window').width() - 225) + 'px'
+        left: Math.min(offset.left - parentOffset.left, $('#ra_workbench_window').width() - 230) + 'px'
     }).toggle();
 });
 
@@ -273,7 +294,6 @@ $(document).on('input', '#ra_filter_search_input', function() {
     });
 });
 
-// Кнопки "Выбрать все" / "Сбросить" в меню фильтра
 $(document).on('click', '#ra_filter_select_all', function(e) {
     e.preventDefault();
     $('#ra_filter_checkboxes_container .ra-col-val-chk:visible').prop('checked', true);
@@ -288,7 +308,7 @@ $(document).on('click', '#ra_filter_cancel_btn', function() {
     $('#ra_column_filter_menu').hide();
 });
 
-// Применение фильтра или сортировки
+// Сортировка А-Я / Я-А
 $(document).on('click', '.ra-filter-action', function() {
     let action = $(this).data('action');
     $('#ra_column_filter_menu').hide();
@@ -298,8 +318,11 @@ $(document).on('click', '.ra-filter-action', function() {
 
     if (action === 'asc' || action === 'desc') {
         rows.sort(function(a, b) {
-            let valA = $(a).find('td').eq(colIdx).text().trim();
-            let valB = $(b).find('td').eq(colIdx).text().trim();
+            let $tdA = $(a).find('td').eq(colIdx);
+            let $tdB = $(b).find('td').eq(colIdx);
+            let valA = $tdA.find('select').length ? $tdA.find('select').val() : $tdA.text().trim();
+            let valB = $tdB.find('select').length ? $tdB.find('select').val() : $tdB.text().trim();
+            
             let numA = parseFloat(valA.replace(/\./g, ''));
             let numB = parseFloat(valB.replace(/\./g, ''));
 
@@ -312,6 +335,42 @@ $(document).on('click', '.ra-filter-action', function() {
     }
 });
 
+// Применение фильтра по условию (Больше, Меньше, Равно и т.д.)
+$(document).on('click', '#ra_filter_apply_condition', function() {
+    let op = $('#ra_filter_condition_op').val();
+    let targetVal = $('#ra_filter_condition_val').val().trim();
+    let colIdx = activeFilterColumnIndex;
+
+    $('#ra_column_filter_menu').hide();
+
+    $('#troops_table_body tr').each(function() {
+        let $td = $(this).find('td').eq(colIdx);
+        let valStr = $td.find('select').length ? $td.find('select').val() : $td.text().trim();
+        
+        let numVal = parseFloat(valStr.replace(/\./g, ''));
+        let targetNum = parseFloat(targetVal.replace(/\./g, ''));
+        let isNumeric = !isNaN(numVal) && !isNaN(targetNum);
+
+        let match = false;
+        if (op === 'contains') {
+            match = valStr.toLowerCase().includes(targetVal.toLowerCase());
+        } else if (isNumeric) {
+            if (op === 'eq') match = (numVal === targetNum);
+            else if (op === 'neq') match = (numVal !== targetNum);
+            else if (op === 'gt') match = (numVal > targetNum);
+            else if (op === 'gte') match = (numVal >= targetNum);
+            else if (op === 'lt') match = (numVal < targetNum);
+            else if (op === 'lte') match = (numVal <= targetNum);
+        } else {
+            if (op === 'eq') match = (valStr === targetVal);
+            else if (op === 'neq') match = (valStr !== targetVal);
+        }
+
+        $(this).toggle(match);
+    });
+});
+
+// Применение стандартных чекбоксов
 $(document).on('click', '#ra_filter_apply_btn', function() {
     let allowedVals = [];
     $('#ra_filter_checkboxes_container .ra-col-val-chk').each(function() {
@@ -322,7 +381,9 @@ $(document).on('click', '#ra_filter_apply_btn', function() {
 
     let colIdx = activeFilterColumnIndex;
     $('#troops_table_body tr').each(function() {
-        let val = $(this).find('td').eq(colIdx).text().trim();
+        let $td = $(this).find('td').eq(colIdx);
+        let val = $td.find('select').length ? $td.find('select').val() : $td.text().trim();
+        
         if (allowedVals.includes(val)) {
             $(this).show();
         } else {
@@ -333,14 +394,12 @@ $(document).on('click', '#ra_filter_apply_btn', function() {
     $('#ra_column_filter_menu').hide();
 });
 
-// Массовый выбор строк в таблице
 $(document).on('change', '#select_all_rows_chk, #th_chk_all', function() {
     let isChecked = $(this).is(':checked');
     $('.row-select-chk').prop('checked', isChecked);
     $('#select_all_rows_chk, #th_chk_all').prop('checked', isChecked);
 });
 
-// Полная очистка таблицы
 $(document).on('click', '#ra_clear_troops_btn', function() {
     $('#troops_table_body').html(`
         <tr>
@@ -445,7 +504,7 @@ $(document).on('click', '#ra_fetch_page_troops_btn', function() {
 });
 
 // ============================================================================
-// БЛОК 4: ЛОГИКА ЗАГРУЗКИ ВОЙСК СОПЛЕМЕННИКОВ ("Войска племени")
+// БЛОК 4: ИСПРАВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ ВОЙСК СОПЛЕМЕННИКОВ ("Войска племени")
 // ============================================================================
 $(document).on('click', '#ra_tribe_troops_btn', function() {
     let server = window.location.protocol + "//" + window.location.host + "/";
@@ -455,141 +514,144 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
 
     UI.SuccessMessage('Получение списка игроков племени...');
 
-    $.get(server + "game.php?" + sitter + "screen=ally&mode=members_units", function(html) {
+    // Пробуем запросить страницу участников через screen=ally&mode=members
+    $.get(server + "game.php?" + sitter + "screen=ally&mode=members", function(html) {
         let doc = new DOMParser().parseFromString(html, "text/html");
-        let $select = $(doc).find("[name='player_id']");
         
-        if (!$select.length) {
-            $.get(server + "game.php?" + sitter + "screen=ally&mode=members", function(html2) {
-                let doc2 = new DOMParser().parseFromString(html2, "text/html");
-                let $select2 = $(doc2).find("[name='player_id']");
-                if (!$select2.length) {
-                    UI.ErrorMessage('Не найден список игроков племени! Убедитесь, что вы состоите в племени.');
-                    return;
-                }
-                processAllyPlayers($select2, server, sitter);
-            }).fail(function() {
-                UI.ErrorMessage('Не удалось запросить список членов племени.');
+        let unitoption = {};
+        
+        // Способ 1: Ищем выпадающий список игроков (если присутствует на странице)
+        let $select = $(doc).find("[name='player_id']");
+        if ($select.length) {
+            $select.find("option").each(function() {
+                let name = $(this).text().trim();
+                let val = $(this).val();
+                if (val && val !== "0" && val !== "") unitoption[name] = val;
             });
+        }
+
+        // Способ 2: Если селектора нет, парсим ссылки на игроков из таблицы членов племени
+        if (Object.keys(unitoption).length === 0) {
+            $(doc).find("table.vis tr").each(function() {
+                let $link = $(this).find("a[href*='id=']");
+                if ($link.length) {
+                    let href = $link.attr('href');
+                    let matchId = href.match(/id=(\d+)/);
+                    if (matchId) {
+                        let pName = $link.text().trim();
+                        let pId = matchId[1];
+                        if (pName && pId) unitoption[pName] = pId;
+                    }
+                }
+            });
+        }
+
+        let playerIds = Object.keys(unitoption);
+        if (playerIds.length === 0) {
+            UI.ErrorMessage('Не удалось найти список игроков племени. Убедитесь, что вы состоите в племени.');
             return;
         }
-        processAllyPlayers($select, server, sitter);
+
+        UI.SuccessMessage(`Найдено игроков: ${playerIds.length}. Загрузка войск...`);
+        let $tbody = $('#troops_table_body');
+        $tbody.empty();
+        let rowsCount = 0;
+        let _index = 0;
+        let i = 0;
+
+        for (let playerName in unitoption) {
+            let pId = unitoption[playerName];
+            i++;
+            (function(val, pName) {
+                setTimeout(function() {
+                    $.get(server + "game.php?" + sitter + "screen=ally&mode=members_units&player_id=" + val, function(data) {
+                        _index++;
+                        let docPage = new DOMParser().parseFromString(data, "text/html");
+                        
+                        let table = docPage.querySelector('table#units_table');
+                        if (!table) {
+                            let tables = docPage.querySelectorAll('table.vis');
+                            for (let t of tables) {
+                                if (t.rows.length > 1 && t.rows[0].cells.length >= 10) {
+                                    table = t;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (table && table.rows) {
+                            let trows = table.rows;
+                            for (let j = 1; j < trows.length; ++j) {
+                                let cells = trows[j].cells;
+                                if (!cells || cells.length < 10) continue;
+
+                                let coordMatch = trows[j].innerText.match(/\d+\|\d+/);
+                                let coords = coordMatch ? coordMatch[0] : null;
+                                if (!coords) continue;
+
+                                let cellTexts = [];
+                                for (let c = 0; c < cells.length; c++) {
+                                    cellTexts.push(parseInt(cells[c].innerText.replace(/\./g, '')) || 0);
+                                }
+
+                                let spear = cellTexts[2] || 0;
+                                let sword = cellTexts[3] || 0;
+                                let axe = cellTexts[4] || 0;
+                                let spy = cellTexts[6] || 0;
+                                let light = cellTexts[7] || 0;
+                                let heavy = cellTexts[8] || 0;
+                                let ram = cellTexts[10] || 0;
+                                let catapult = cellTexts[11] || 0;
+                                let knight = cellTexts[12] || 0;
+                                let snob = cellTexts[13] || 0;
+
+                                let defaultType = (axe > spear) ? "офф" : "дефф";
+
+                                let trHTML = `
+                                    <tr style="height: 24px;">
+                                        <td style="text-align: center;"><input type="checkbox" class="row-select-chk" value="${coords}" checked></td>
+                                        <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px;">${escapeHtml(pName)}</td>
+                                        <td style="text-align: center;"><a href="#" style="color: #0000ee; text-decoration: none;"><b>${coords}</b></a></td>
+                                        <td style="text-align: center;">${spear}</td>
+                                        <td style="text-align: center;">${sword}</td>
+                                        <td style="text-align: center;">${axe}</td>
+                                        <td style="text-align: center;">${spy}</td>
+                                        <td style="text-align: center;">${light}</td>
+                                        <td style="text-align: center;">${heavy}</td>
+                                        <td style="text-align: center;">${ram}</td>
+                                        <td style="text-align: center;">${catapult}</td>
+                                        <td style="text-align: center;">${knight}</td>
+                                        <td style="text-align: center; font-weight: bold; color: #8b0000;">${snob}</td>
+                                        <td style="text-align: center;">
+                                            <select class="ra-troop-type-select" style="font-size: 10px; padding: 1px; background: #fff5d9; border: 1px solid #7d510f;">
+                                                <option value="офф" ${defaultType === 'офф' ? 'selected' : ''}>офф</option>
+                                                <option value="дефф" ${defaultType === 'дефф' ? 'selected' : ''}>дефф</option>
+                                                <option value="развед" ${defaultType === 'развед' ? 'selected' : ''}>развед</option>
+                                            </select>
+                                        </td>
+                                        <td style="text-align: center;"><input type="checkbox" class="row-select-chk" value="${coords}" checked></td>
+                                    </tr>
+                                `;
+                                $tbody.append(trHTML);
+                                rowsCount++;
+                            }
+                        }
+                        
+                        $('#troops_count_label').text(`Записей: ${rowsCount} из ${rowsCount}`);
+
+                        if (_index === playerIds.length) {
+                            UI.SuccessMessage(`Загрузка войск племени завершена! Всего записей: ${rowsCount}`);
+                        }
+                    }).fail(function() {
+                        _index++;
+                    });
+                }, 300 * i);
+            })(pId, playerName);
+        }
     }).fail(function() {
         UI.ErrorMessage('Не удалось запросить данные племени.');
     });
 });
-
-function processAllyPlayers($select, server, sitter) {
-    let unitoption = {};
-    $select.find("option").each(function() {
-        let name = $(this).text().trim();
-        let val = $(this).val();
-        if (val && val !== "0" && val !== "") unitoption[name] = val;
-    });
-
-    let playerIds = Object.keys(unitoption);
-    if (playerIds.length === 0) {
-        UI.ErrorMessage('Список в селекторе пуст. Попробуйте открыть вкладку "Войска племени" вручную в игре.');
-        return;
-    }
-
-    UI.SuccessMessage(`Найдено игроков: ${playerIds.length}. Загрузка войск...`);
-    let $tbody = $('#troops_table_body');
-    $tbody.empty();
-    let rowsCount = 0;
-    let _index = 0;
-    let i = 0;
-
-    for (let playerName in unitoption) {
-        let pId = unitoption[playerName];
-        i++;
-        (function(val, pName) {
-            setTimeout(function() {
-                $.get(server + "game.php?" + sitter + "screen=ally&mode=members_units&player_id=" + val, function(data) {
-                    _index++;
-                    let doc = new DOMParser().parseFromString(data, "text/html");
-                    
-                    let table = doc.querySelector('table.vis:has(th img), table#units_table, table.overview_table');
-                    if (!table) {
-                        let tables = doc.querySelectorAll('table.vis');
-                        for (let t of tables) {
-                            if (t.rows.length > 1 && t.rows[0].cells.length >= 10) {
-                                table = t;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (table && table.rows) {
-                        let trows = table.rows;
-                        for (let j = 1; j < trows.length; ++j) {
-                            let cells = trows[j].cells;
-                            if (!cells || cells.length < 10) continue;
-
-                            let coordMatch = trows[j].innerText.match(/\d+\|\d+/);
-                            let coords = coordMatch ? coordMatch[0] : null;
-                            if (!coords) continue;
-
-                            let cellTexts = [];
-                            for (let c = 0; c < cells.length; c++) {
-                                cellTexts.push(parseInt(cells[c].innerText.replace(/\./g, '')) || 0);
-                            }
-
-                            let spear = cellTexts[2] || 0;
-                            let sword = cellTexts[3] || 0;
-                            let axe = cellTexts[4] || 0;
-                            let spy = cellTexts[6] || 0;
-                            let light = cellTexts[7] || 0;
-                            let heavy = cellTexts[8] || 0;
-                            let ram = cellTexts[10] || 0;
-                            let catapult = cellTexts[11] || 0;
-                            let knight = cellTexts[12] || 0;
-                            let snob = cellTexts[13] || 0;
-
-                            let defaultType = (axe > spear) ? "офф" : "дефф";
-
-                            let trHTML = `
-                                <tr style="height: 24px;">
-                                    <td style="text-align: center;"><input type="checkbox" class="row-select-chk" value="${coords}" checked></td>
-                                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px;">${escapeHtml(pName)}</td>
-                                    <td style="text-align: center;"><a href="#" style="color: #0000ee; text-decoration: none;"><b>${coords}</b></a></td>
-                                    <td style="text-align: center;">${spear}</td>
-                                    <td style="text-align: center;">${sword}</td>
-                                    <td style="text-align: center;">${axe}</td>
-                                    <td style="text-align: center;">${spy}</td>
-                                    <td style="text-align: center;">${light}</td>
-                                    <td style="text-align: center;">${heavy}</td>
-                                    <td style="text-align: center;">${ram}</td>
-                                    <td style="text-align: center;">${catapult}</td>
-                                    <td style="text-align: center;">${knight}</td>
-                                    <td style="text-align: center; font-weight: bold; color: #8b0000;">${snob}</td>
-                                    <td style="text-align: center;">
-                                        <select class="ra-troop-type-select" style="font-size: 10px; padding: 1px; background: #fff5d9; border: 1px solid #7d510f;">
-                                            <option value="офф" ${defaultType === 'офф' ? 'selected' : ''}>офф</option>
-                                            <option value="дефф" ${defaultType === 'дефф' ? 'selected' : ''}>дефф</option>
-                                            <option value="развед" ${defaultType === 'развед' ? 'selected' : ''}>развед</option>
-                                        </select>
-                                    </td>
-                                    <td style="text-align: center;"><input type="checkbox" class="row-select-chk" value="${coords}" checked></td>
-                                </tr>
-                            `;
-                            $tbody.append(trHTML);
-                            rowsCount++;
-                        }
-                    }
-                    
-                    $('#troops_count_label').text(`Записей: ${rowsCount} из ${rowsCount}`);
-
-                    if (_index === playerIds.length) {
-                        UI.SuccessMessage(`Загрузка войск племени завершена! Всего записей: ${rowsCount}`);
-                    }
-                }).fail(function() {
-                    _index++;
-                });
-            }, 300 * i);
-        })(pId, playerName);
-    }
-}
 
 // ============================================================================
 // БЛОК 5: СОХРАНЕНИЕ ДЕРЕВЕНЬ В КАТЕГОРИИ И ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -615,7 +677,6 @@ $(document).on('click', '.save-category-option', function() {
     $('#ra_save_menu').hide();
 });
 
-// Защита от XSS для имен и строк
 function escapeHtml(text) {
     return $('<div>').text(text).html();
 }
