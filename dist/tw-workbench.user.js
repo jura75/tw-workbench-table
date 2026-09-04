@@ -101,8 +101,9 @@
 
 
 /* --- Troops Tab Module --- */
-// src/tab_troops.js
-
+// ============================================================================
+// БЛОК 1: HTML-ШАБЛОН ВКЛАДКИ (Панель управления, таблица и меню фильтров)
+// ============================================================================
 function getTroopsTabHTML() {
     return `
         <div class="ra-toolbar" style="margin-bottom: 8px; padding: 6px; background: #e8d0ab; border: 1px solid #7d510f; display: flex; justify-content: space-between; align-items: center; font-size: 11px; position: relative;">
@@ -167,7 +168,11 @@ function getTroopsTabHTML() {
     `;
 }
 
-// Меню сохранения
+// ============================================================================
+// БЛОК 2: ОБРАБОТЧИКИ ИНТЕРФЕЙСА (Меню, чекбоксы, очистка)
+// ============================================================================
+
+// Открытие меню сохранения выбранного
 $(document).on('click', '#ra_save_dropdown_btn', function(e) {
     e.stopPropagation();
     $('#ra_save_menu').toggle();
@@ -175,6 +180,8 @@ $(document).on('click', '#ra_save_dropdown_btn', function(e) {
 });
 
 let activeFilterColumn = null;
+
+// Открытие меню фильтра колонок таблицы
 $(document).on('click', '.ra-th-filter', function(e) {
     e.stopPropagation();
     activeFilterColumn = $(this).data('col');
@@ -188,17 +195,20 @@ $(document).on('click', '.ra-th-filter', function(e) {
     }).toggle();
 });
 
+// Закрытие выпадающих меню при клике вне их области
 $(document).on('click', function() {
     $('#ra_save_menu').hide();
     $('#ra_column_filter_menu').hide();
 });
 
+// Массовый выбор чекбоксов в таблице
 $(document).on('change', '#select_all_rows_chk, #th_chk_all', function() {
     let isChecked = $(this).is(':checked');
     $('.row-select-chk').prop('checked', isChecked);
     $('#select_all_rows_chk, #th_chk_all').prop('checked', isChecked);
 });
 
+// Кнопка полного очищения таблицы
 $(document).on('click', '#ra_clear_troops_btn', function() {
     $('#troops_table_body').html(`
         <tr>
@@ -210,7 +220,9 @@ $(document).on('click', '#ra_clear_troops_btn', function() {
     $('#troops_count_label').text('Записей: 0 из 0');
 });
 
-// 1. Сбор со страницы аккаунта ("Снять со страницы")
+// ============================================================================
+// БЛОК 3: ЛОГИКА ЗАГРУЗКИ ДАННЫХ АККАУНТА ("Снять со страницы")
+// ============================================================================
 $(document).on('click', '#ra_fetch_page_troops_btn', function() {
     let url = window.game_data.link_base_pure + "overview_villages&mode=units";
     let playerName = window.game_data.player.name;
@@ -300,7 +312,9 @@ $(document).on('click', '#ra_fetch_page_troops_btn', function() {
     });
 });
 
-// 2. Сбор войск соплеменников с любой страницы ("Войска племени")
+// ============================================================================
+// БЛОК 4: ЛОГИКА ЗАГРУЗКИ ВОЙСК СОПЛЕМЕННИКОВ ("Войска племени")
+// ============================================================================
 $(document).on('click', '#ra_tribe_troops_btn', function() {
     let server = window.location.protocol + "//" + window.location.host + "/";
     let urlObj = new URL(window.location.href);
@@ -333,6 +347,7 @@ $(document).on('click', '#ra_tribe_troops_btn', function() {
     });
 });
 
+// Вспомогательная функция парсинга данных членов племени
 function processAllyPlayers($select, server, sitter) {
     let unitoption = {};
     $select.find("option").each(function() {
@@ -434,7 +449,9 @@ function processAllyPlayers($select, server, sitter) {
     }
 }
 
-// Сохранение категорий
+// ============================================================================
+// БЛОК 5: СОХРАНЕНИЕ ДЕРЕВЕНЬ В КАТЕГОРИИ (Локальное хранилище)
+// ============================================================================
 $(document).on('click', '.save-category-option', function() {
     let category = $(this).data('cat');
     let selectedCoords = [];
